@@ -20,6 +20,10 @@ defmodule Exrabbit.Defs do
 	defrecord :amqp_params_network, Record.extract(:amqp_params_network, from_lib: @amqp_client)
 	defrecord :'basic.publish', Record.extract(:'basic.publish', from_lib: @rabbit_framing)
 	lc record inlist [
+		:'queue.declare',
+		:'queue.declare_ok',
+		:'queue.bind',
+		:'queue.bind_ok',
 		:'basic.get', 
 		:'basic.get_ok', 
 		:'basic.get_empty', 
@@ -35,12 +39,16 @@ defmodule Exrabbit.Defs do
 end
 
 defmodule Exrabbit.Utils do
+	defp get_host do
+		'localhost'
+	end
 	def connect, do: connect([])
 	def connect(args) do
 		connection_settings = [
 			username: "guest", 
 			password: "guest", 
-			host: 'rabbit',
+			host: get_host,
+			virtual_host: "/",
 			heartbeat: 1]
 		|> Enum.map(fn {name, value} ->
 			case args[name] do
@@ -53,6 +61,7 @@ defmodule Exrabbit.Utils do
 			username: connection_settings[:username],
 			password: connection_settings[:password],
 			host: connection_settings[:host],
+			virtual_host: connection_settings[:virtual_host],
 			heartbeat: connection_settings[:heartbeat]
 		])
 		connection
@@ -87,6 +96,18 @@ defmodule Exrabbit.Utils do
 			{:'basic.get_ok'[delivery_tag: tag], content} -> [tag: tag, content: get_payload(content)]
 			:'basic.get_empty'[] -> nil
 		end
+	end
+
+	def declare_queue(channel) do
+		:'queue.declare_ok'[queue: queue] = :amqp_channel.call channel, :'queue.declare'[auto_delete: true]
+		queue
+	end
+	def declare_queue(channel, queue) do
+		:'queue.declare_ok'[queue: queue] = :amqp_channel.call channel, :'queue.declare'[queue: queue]
+		queue
+	end
+	def bind_queue(channel, queue, exchange, key // "") do
+		:'queue.bind_ok'[] = :amqp_channel.call channel, :'queue.bind'[queue: queue, exchange: exchange, routing_key: key]		
 	end
 
 	def parse_message({:'basic.deliver'[delivery_tag: tag], :amqp_msg[payload: payload]}), do: {tag, payload}

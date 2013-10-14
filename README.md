@@ -53,3 +53,26 @@ defmodule Consumer do
   end
 end
 ```
+
+
+Or same, using behaviours:
+
+
+```elixir
+defmodule Test do 
+  use Exrabbit.Subscriber 
+
+  def handle_message(msg, _state) do 
+    case parse_message(msg) do 
+      nil -> 
+        IO.puts "Nil"
+      {tag,json} -> 
+        IO.puts "Msg: #{json}"
+        ack _state[:channel], tag 
+    end  
+  end 
+end
+
+:gen_server.start Test, [queue: "testQ"], []   
+```
+

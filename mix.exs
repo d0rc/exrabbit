@@ -18,6 +18,7 @@ defmodule Exrabbit.Mixfile do
   defp deps do
     [
       { :amqp_client, ">0.0", github: "jbrisbin/amqp_client" },
+      { :gitex, ">0.0", git: "git@git.maxbet.asia:elixir/gitex.git"}
     ]
   end
 end
