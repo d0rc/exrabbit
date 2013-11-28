@@ -136,7 +136,7 @@ defmodule Exrabbit.Utils do
 		exchange
 	end
 	
-	def set_qos(prefetch_count // 1) do
+	def set_qos(channel, prefetch_count // 1) do
 		:'basic.qos_ok'[] = :amqp_channel.call channel, :'basic.qos'[prefetch_count: prefetch_count]
 		prefetch_count
 	end
