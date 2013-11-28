@@ -32,7 +32,18 @@ defmodule Exrabbit.Defs do
 		:'basic.consume_ok',
 		:'basic.cancel',
 		:'basic.cancel_ok',
-		:'basic.deliver'] do
+		:'basic.deliver',
+		:'exchange.declare',
+		:'exchange.declare_ok',
+		:'exchange.delete', 
+		:'exchange.delete_ok', 
+		:'exchange.bind', 
+		:'exchange.bind_ok', 
+		:'exchange.unbind', 
+		:'exchange.unbind_ok',
+		:'basic.qos', 
+		:'basic.qos_ok'
+		 ] do
 			defrecord record, Record.extract(record, from_lib: @rabbit_common)
 	end
 	defrecord :amqp_msg, [props: :'P_basic'[], payload: ""]
@@ -106,13 +117,38 @@ defmodule Exrabbit.Utils do
 		:'queue.declare_ok'[queue: queue] = :amqp_channel.call channel, :'queue.declare'[queue: queue]
 		queue
 	end
+	def declare_queue(channel, queue, autodelete) do
+		:'queue.declare_ok'[queue: queue] = :amqp_channel.call channel, :'queue.declare'[queue: queue, auto_delete: autodelete]
+		queue
+	end
 	def bind_queue(channel, queue, exchange, key // "") do
 		:'queue.bind_ok'[] = :amqp_channel.call channel, :'queue.bind'[queue: queue, exchange: exchange, routing_key: key]		
+	end
+	
+
+	def declare_exchange(channel, exchange) do
+		:'exchange.declare_ok'[] = :amqp_channel.call channel, :'exchange.declare'[exchange: exchange]
+		exchange
+	end
+	
+	def declare_exchange(channel, exchange, autodelete) do
+		:'exchange.declare_ok'[] = :amqp_channel.call channel, :'exchange.declare'[exchange: exchange, auto_delete: autodelete]
+		exchange
+	end
+	
+	def set_qos(prefetch_count // 1) do
+		:'basic.qos_ok'[] = :amqp_channel.call channel, :'basic.qos'[prefetch_count: prefetch_count]
+		prefetch_count
 	end
 
 	def parse_message({:'basic.deliver'[delivery_tag: tag], :amqp_msg[payload: payload]}), do: {tag, payload}
 	def parse_message(:'basic.cancel_ok'[]), do: nil
 	def parse_message(:'basic.consume_ok'[]), do: nil
+	def parse_message(:'exchange.declare_ok'[]), do: nil
+	def parse_message(:'exchange.delete_ok'[]), do: nil
+	def parse_message(:'exchange.bind_ok'[]), do: nil
+	def parse_message(:'exchange.unbind_ok'[]), do: nil
+	def parse_message(:'basic.qos_ok'[]), do: nil
 
 	def subscribe(channel, queue), do: subscribe(channel, queue, self)
 	def subscribe(channel, queue, pid) do
