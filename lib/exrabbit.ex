@@ -127,12 +127,12 @@ defmodule Exrabbit.Utils do
 	
 
 	def declare_exchange(channel, exchange) do
-		:'exchange.declare_ok'[] = :amqp_channel.call channel, :'exchange.declare'[exchange: exchange]
+		:'exchange.declare_ok'[] = :amqp_channel.call channel, :'exchange.declare'[exchange: exchange, type: "fanout", auto_delete: true]
 		exchange
 	end
 	
-	def declare_exchange(channel, exchange, autodelete) do
-		:'exchange.declare_ok'[] = :amqp_channel.call channel, :'exchange.declare'[exchange: exchange, auto_delete: autodelete]
+	def declare_exchange(channel, exchange,type, autodelete) do
+		:'exchange.declare_ok'[] = :amqp_channel.call channel, :'exchange.declare'[exchange: exchange, type: type, auto_delete: autodelete]
 		exchange
 	end
 	
@@ -141,7 +141,7 @@ defmodule Exrabbit.Utils do
 		prefetch_count
 	end
 
-	def parse_message({:'basic.deliver'[delivery_tag: tag], :amqp_msg[payload: payload]}), do: {tag, payload}
+	def parse_message({:'basic.deliver'[delivery_tag: tag], :amqp_msg[payload: payload]}), do: {:message,tag, payload}
 	def parse_message(:'basic.cancel_ok'[]), do: nil
 	def parse_message(:'basic.consume_ok'[]), do: nil
 	def parse_message(:'exchange.declare_ok'[]), do: nil
@@ -149,6 +149,14 @@ defmodule Exrabbit.Utils do
 	def parse_message(:'exchange.bind_ok'[]), do: nil
 	def parse_message(:'exchange.unbind_ok'[]), do: nil
 	def parse_message(:'basic.qos_ok'[]), do: nil
+		
+	def parse_message(:'basic.cancel'[]) do
+		{:error, :queue_killed}
+	end
+	
+	def parse_message(_) do
+		{:error, :unknown_message}
+	end
 
 	def subscribe(channel, queue), do: subscribe(channel, queue, self)
 	def subscribe(channel, queue, pid) do
@@ -159,5 +167,6 @@ defmodule Exrabbit.Utils do
 	def unsubscribe(channel, consumer_tag) do
 		:amqp_channel.call channel, :'basic.cancel'[consumer_tag: consumer_tag]
 	end
+			
 end
 
