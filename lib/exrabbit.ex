@@ -91,6 +91,7 @@ defmodule Exrabbit.Utils do
 	def publish(channel, exchange, routing_key, message) do
 		:amqp_channel.call channel, :'basic.publish'[exchange: exchange, routing_key: routing_key], :amqp_msg[payload: message]
 	end
+	
 	def ack(channel, tag) do
 		:amqp_channel.call channel, :'basic.ack'[delivery_tag: tag]
 	end
@@ -113,14 +114,22 @@ defmodule Exrabbit.Utils do
 		:'queue.declare_ok'[queue: queue] = :amqp_channel.call channel, :'queue.declare'[auto_delete: true]
 		queue
 	end
+	
 	def declare_queue(channel, queue) do
 		:'queue.declare_ok'[queue: queue] = :amqp_channel.call channel, :'queue.declare'[queue: queue]
 		queue
 	end
+	
 	def declare_queue(channel, queue, autodelete) do
 		:'queue.declare_ok'[queue: queue] = :amqp_channel.call channel, :'queue.declare'[queue: queue, auto_delete: autodelete]
 		queue
 	end
+	
+	def declare_queue(channel, queue, autodelete, durable) do
+		:'queue.declare_ok'[queue: queue] = :amqp_channel.call channel, :'queue.declare'[queue: queue, auto_delete: autodelete, durable: durable]
+		queue
+	end
+	
 	def bind_queue(channel, queue, exchange, key // "") do
 		:'queue.bind_ok'[] = :amqp_channel.call channel, :'queue.bind'[queue: queue, exchange: exchange, routing_key: key]		
 	end
