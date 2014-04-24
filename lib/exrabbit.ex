@@ -6,6 +6,7 @@ defmodule Exrabbit do
   end
 end
 
+require Record
 defmodule Exrabbit.Framing do
 	defrecord :'P_basic', Record.extract(:'P_basic', from_lib: "rabbit_common/include/rabbit_framing.hrl")
 end
@@ -13,28 +14,24 @@ end
 defmodule Exrabbit.Defs do
 	require Exrabbit.Framing
 
-	@rabbit_common "rabbit_common/include/rabbit_framing.hrl"
-	@rabbit_framing "rabbit_common/include/rabbit_framing.hrl"
-	@amqp_client "amqp_client/include/amqp_client.hrl"
-
-	defrecord :amqp_params_network, Record.extract(:amqp_params_network, from_lib: @amqp_client)
-	defrecord :'basic.publish', Record.extract(:'basic.publish', from_lib: @rabbit_framing)
-	lc record inlist [
-		:'queue.declare',
-		:'queue.declare_ok',
-		:'queue.bind',
-		:'queue.bind_ok',
-		:'basic.get', 
-		:'basic.get_ok', 
-		:'basic.get_empty', 
-		:'basic.ack',
-		:'basic.consume',
-		:'basic.consume_ok',
-		:'basic.cancel',
-		:'basic.cancel_ok',
-		:'basic.deliver'] do
-			defrecord record, Record.extract(record, from_lib: @rabbit_common)
-	end
+	defrecord :amqp_params_network, Record.extract(:amqp_params_network, from_lib: "amqp_client/include/amqp_client.hrl")
+	defrecord :'basic.publish', Record.extract(:'basic.publish', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'queue.declare', Record.extract(:'queue.declare', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'queue.declare_ok', Record.extract(:'queue.declare_ok', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'queue.bind', Record.extract(:'queue.bind', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'queue.bind_ok', Record.extract(:'queue.bind_ok', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'basic.get', Record.extract(:'basic.get', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'basic.get_ok', Record.extract(:'basic.get_ok', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'basic.get_empty', Record.extract(:'basic.get_empty', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'basic.ack', Record.extract(:'basic.ack', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'basic.nack', Record.extract(:'basic.nack', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'basic.consume', Record.extract(:'basic.consume', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'basic.consume_ok', Record.extract(:'basic.consume_ok', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'basic.cancel', Record.extract(:'basic.cancel', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'basic.cancel_ok', Record.extract(:'basic.cancel_ok', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'confirm.select', Record.extract(:'confirm.select', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'confirm.select_ok', Record.extract(:'confirm.select_ok', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'basic.deliver', Record.extract(:'basic.deliver', from_lib: "rabbit_common/include/rabbit_framing.hrl")
 	defrecord :amqp_msg, [props: :'P_basic'[], payload: ""]
 end
 
@@ -77,11 +74,55 @@ defmodule Exrabbit.Utils do
 	def disconnect(connection), do: :amqp_connection.close(connection)
 	def channel_close(channel), do: :amqp_channel.close(channel)
 
+
+	defp wait_confirmation(root, channel) do
+		receive do
+			:'basic.ack'[delivery_tag: tag] ->
+				send(root, {:message_confirmed, tag})
+			:'basic.nack'[delivery_tag: tag] ->
+				send(root, {:message_lost, tag})
+			after 15000 ->
+				send(root, {:confirmation_timeout})
+		end
+		:amqp_channel.unregister_confirm_handler channel
+	end
+
+	def rpc(channel, exchange, routing_key, message, reply_to) do
+		:amqp_channel.call channel, :'basic.publish'[exchange: exchange, routing_key: routing_key], :amqp_msg[props: :'P_basic'[reply_to: reply_to], payload: message]
+	end
+
+	def rpc(channel, exchange, routing_key, message, reply_to, uuid) do
+		:amqp_channel.call channel, :'basic.publish'[exchange: exchange, routing_key: routing_key], :amqp_msg[props: :'P_basic'[reply_to: reply_to, headers: [{"uuid", :longstr, uuid}]  ], payload: message]
+	end
+
+
 	def publish(channel, exchange, routing_key, message) do
+		publish(channel, exchange, routing_key, message, :no_confirmation)
+	end
+	def publish(channel, exchange, routing_key, message, :no_confirmation) do
 		:amqp_channel.call channel, :'basic.publish'[exchange: exchange, routing_key: routing_key], :amqp_msg[payload: message]
 	end
+	def publish(channel, exchange, routing_key, message, :wait_confirmation) do
+		root = self
+		:'confirm.select_ok'[] = :amqp_channel.call channel, :'confirm.select'[]
+		:ok = :amqp_channel.register_confirm_handler channel, spawn fn -> 
+			wait_confirmation(root, channel) 
+		end
+		:ok = publish(channel, exchange, routing_key, message, :no_confirmation)
+		receive do
+			{:message_confirmed, _data} -> :ok
+			{:message_lost, _data} -> {:error, :lost}
+			{:confirmation_timeout} -> {:error, :timeout}
+		end
+	end
+
+
+
 	def ack(channel, tag) do
 		:amqp_channel.call channel, :'basic.ack'[delivery_tag: tag]
+	end
+	def nack(channel, tag) do
+		:amqp_channel.call channel, :'basic.nack'[delivery_tag: tag]
 	end
 	def get_messages(channel, queue), do: get_messages(channel, queue, true)
 	def get_messages_ack(channel, queue), do: get_messages(channel, queue, false)
@@ -102,15 +143,23 @@ defmodule Exrabbit.Utils do
 		:'queue.declare_ok'[queue: queue] = :amqp_channel.call channel, :'queue.declare'[auto_delete: true]
 		queue
 	end
+
+	def declare_queue_exclusive(channel) do
+		:'queue.declare_ok'[queue: queue] = :amqp_channel.call channel, :'queue.declare'[exclusive: true]
+		queue
+	end
+
+
 	def declare_queue(channel, queue) do
 		:'queue.declare_ok'[queue: queue] = :amqp_channel.call channel, :'queue.declare'[queue: queue]
 		queue
 	end
-	def bind_queue(channel, queue, exchange, key // "") do
+	def bind_queue(channel, queue, exchange, key \\ "") do
 		:'queue.bind_ok'[] = :amqp_channel.call channel, :'queue.bind'[queue: queue, exchange: exchange, routing_key: key]		
 	end
-
-	def parse_message({:'basic.deliver'[delivery_tag: tag], :amqp_msg[payload: payload]}), do: {tag, payload}
+  
+  	def parse_message({:'basic.deliver'[delivery_tag: tag], :amqp_msg[props: :'P_basic'[reply_to: nil], payload: payload]}), do: {tag, payload}
+	def parse_message({:'basic.deliver'[delivery_tag: tag], :amqp_msg[props: :'P_basic'[reply_to: reply_to], payload: payload]}), do: {tag, payload, reply_to}
 	def parse_message(:'basic.cancel_ok'[]), do: nil
 	def parse_message(:'basic.consume_ok'[]), do: nil
 

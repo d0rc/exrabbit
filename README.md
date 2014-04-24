@@ -1,5 +1,33 @@
 # Exrabbit
 
+Easy way to get a queue/exchange worker:
+
+
+```elixir
+import Exrabbit.Ractor
+
+amqp_worker TestQ, queue: "testQ" do
+  on_json json do
+    IO.puts "JSON: #{inspect json}"
+  end
+  on_binary <<"hello">> do
+    IO.puts "Hello-hello from MQ"
+  end
+  on_binary text do
+    IO.puts "Some random binary: #{inspect text}"
+  end
+end
+```
+
+
+Checking if message was published:
+
+
+```elixir
+publish(channel, exchange, routing_key, message, :wait_confirmation)
+```
+
+
 Workflow to send message:
 
 
@@ -69,10 +97,17 @@ defmodule Test do
       {tag,json} -> 
         IO.puts "Msg: #{json}"
         ack _state[:channel], tag 
+      {tag,json,reply_to} -> 
+        IO.puts "For RPC messaging: #{json}"
+        publish(_state[:channel], "", reply_to, "#{json}") # Return ECHO
+        ack _state[:channel], tag 
     end  
   end 
 end
 
 :gen_server.start Test, [queue: "testQ"], []   
 ```
+
+
+
 
