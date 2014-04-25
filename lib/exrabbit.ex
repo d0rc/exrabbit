@@ -203,9 +203,9 @@ defmodule Exrabbit.Utils do
 		:'queue.bind_ok'[] = :amqp_channel.call channel, :'queue.bind'[queue: queue, exchange: exchange, routing_key: key]		
 	end
   
-	def parse_message({:'basic.deliver'[delivery_tag: tag], :amqp_msg[payload: payload]}), do: {:message,tag, payload}
   	def parse_message({:'basic.deliver'[delivery_tag: tag], :amqp_msg[props: :'P_basic'[reply_to: nil], payload: payload]}), do: {tag, payload}
 	def parse_message({:'basic.deliver'[delivery_tag: tag], :amqp_msg[props: :'P_basic'[reply_to: reply_to], payload: payload]}), do: {tag, payload, reply_to}
+	def parse_message({:'basic.deliver'[delivery_tag: tag], :amqp_msg[payload: payload]}), do: {:message,tag, payload}
 	def parse_message(:'basic.cancel_ok'[]), do: nil
 	def parse_message(:'basic.consume_ok'[]), do: nil
 	def parse_message(:'exchange.declare_ok'[]), do: nil
