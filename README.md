@@ -1,5 +1,8 @@
 # Exrabbit
 
+Edited to handle more option in exchanges / queues. Major work done by d0rc
+
+
 Easy way to get a queue/exchange worker:
 
 
