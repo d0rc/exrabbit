@@ -3,20 +3,22 @@ defmodule Exrabbit.Mixfile do
 
   def project do
     [ app: :exrabbit,
-      version: "0.0.1",
+      version: "0.0.2",
       deps: deps ]
   end
 
-  # Configuration for the OTP application
   def application do
-    [mod: { Exrabbit, [] }]
+    [
+      mod: { Exrabbit, [] },
+      applications: [:amqp_client, :jazz]
+    ]
   end
 
-  # Returns the list of dependencies in the format:
-  # { :foobar, "~> 0.1", git: "https://github.com/elixir-lang/foobar.git" }
   defp deps do
     [
       { :amqp_client,  git: "https://github.com/jbrisbin/amqp_client" },
+      { :amqp_client, github: "jbrisbin/amqp_client" },
+      { :jazz, github: "meh/jazz"}
     ]
   end
 end

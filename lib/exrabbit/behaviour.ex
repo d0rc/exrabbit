@@ -1,7 +1,7 @@
 defmodule Exrabbit.Subscriber do
   defmacro __using__(_) do
     quote location: :keep do
-      @behavior :gen_server
+      @behaviour :gen_server
       import Exrabbit.Utils
 
       def init(args) do
