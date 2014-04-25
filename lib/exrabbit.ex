@@ -1,3 +1,5 @@
+require Record
+
 defmodule Exrabbit do
   use Application.Behaviour
 
@@ -6,46 +8,64 @@ defmodule Exrabbit do
   end
 end
 
-defmodule Exrabbit.Framing do
+defmodule Exrabbit.Framing do	
 	defrecord :'P_basic', Record.extract(:'P_basic', from_lib: "rabbit_common/include/rabbit_framing.hrl")
 end
 
 defmodule Exrabbit.Defs do
 	require Exrabbit.Framing
-
-	@rabbit_common "rabbit_common/include/rabbit_framing.hrl"
-	@rabbit_framing "rabbit_common/include/rabbit_framing.hrl"
-	@amqp_client "amqp_client/include/amqp_client.hrl"
-
-	defrecord :amqp_params_network, Record.extract(:amqp_params_network, from_lib: @amqp_client)
-	defrecord :'basic.publish', Record.extract(:'basic.publish', from_lib: @rabbit_framing)
-	lc record inlist [
-		:'queue.declare',
-		:'queue.declare_ok',
-		:'queue.bind',
-		:'queue.bind_ok',
-		:'basic.get', 
-		:'basic.get_ok', 
-		:'basic.get_empty', 
-		:'basic.ack',
-		:'basic.consume',
-		:'basic.consume_ok',
-		:'basic.cancel',
-		:'basic.cancel_ok',
-		:'basic.deliver',
-		:'exchange.declare',
-		:'exchange.declare_ok',
-		:'exchange.delete', 
-		:'exchange.delete_ok', 
-		:'exchange.bind', 
-		:'exchange.bind_ok', 
-		:'exchange.unbind', 
-		:'exchange.unbind_ok',
-		:'basic.qos', 
-		:'basic.qos_ok'
-		 ] do
-			defrecord record, Record.extract(record, from_lib: @rabbit_common)
-	end
+	defrecord :amqp_params_network, Record.extract(:amqp_params_network, from_lib: "amqp_client/include/amqp_client.hrl")
+	defrecord :'queue.declare', Record.extract(:'queue.declare', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'queue.declare_ok', Record.extract(:'queue.declare_ok', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'queue.bind', Record.extract(:'queue.bind', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'queue.bind_ok', Record.extract(:'queue.bind_ok', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'basic.get', Record.extract(:'basic.get', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'basic.get_ok', Record.extract(:'basic.get_ok', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'basic.get_empty', Record.extract(:'basic.get_empty', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'basic.ack', Record.extract(:'basic.ack', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'basic.consume', Record.extract(:'basic.consume', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'basic.consume_ok', Record.extract(:'basic.consume_ok', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'basic.publish', Record.extract(:'basic.publish', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'basic.cancel', Record.extract(:'basic.cancel', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'basic.cancel_ok', Record.extract(:'basic.cancel_ok', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'basic.deliver', Record.extract(:'basic.deliver', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'exchange.declare', Record.extract(:'exchange.declare', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'exchange.declare_ok', Record.extract(:'exchange.declare_ok', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'exchange.delete', Record.extract(:'exchange.delete', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'exchange.delete_ok', Record.extract(:'exchange.delete_ok', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'exchange.bind', Record.extract(:'exchange.bind', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'exchange.bind_ok', Record.extract(:'exchange.bind_ok', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'exchange.unbind', Record.extract(:'exchange.unbind', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'exchange.unbind_ok', Record.extract(:'exchange.unbind_ok', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'basic.qos', Record.extract(:'basic.qos', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	defrecord :'basic.qos_ok', Record.extract(:'basic.qos_ok', from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	# for rc <- [
+	# 	:'queue.declare',
+	# 	:'queue.declare_ok',
+	# 	:'queue.bind',
+	# 	:'queue.bind_ok',
+	# 	:'basic.get', 
+	# 	:'basic.get_ok', 
+	# 	:'basic.get_empty', 
+	# 	:'basic.ack',
+	# 	:'basic.consume',
+	# 	:'basic.consume_ok',
+	# 	:'basic.cancel',
+	# 	:'basic.cancel_ok',
+	# 	:'basic.deliver',
+	# 	:'exchange.declare',
+	# 	:'exchange.declare_ok',
+	# 	:'exchange.delete', 
+	# 	:'exchange.delete_ok', 
+	# 	:'exchange.bind', 
+	# 	:'exchange.bind_ok', 
+	# 	:'exchange.unbind', 
+	# 	:'exchange.unbind_ok',
+	# 	:'basic.qos', 
+	# 	:'basic.qos_ok'
+	# 	 ] do
+	# 		defrecord rc, Record.extract(rc, from_lib: "rabbit_common/include/rabbit_framing.hrl")
+	# end
 	defrecord :amqp_msg, [props: :'P_basic'[], payload: ""]
 end
 
@@ -130,7 +150,7 @@ defmodule Exrabbit.Utils do
 		queue
 	end
 	
-	def bind_queue(channel, queue, exchange, key // "") do
+	def bind_queue(channel, queue, exchange, key \\ "") do
 		:'queue.bind_ok'[] = :amqp_channel.call channel, :'queue.bind'[queue: queue, exchange: exchange, routing_key: key]		
 	end
 	
@@ -140,12 +160,17 @@ defmodule Exrabbit.Utils do
 		exchange
 	end
 	
-	def declare_exchange(channel, exchange,type, autodelete) do
+	def declare_exchange(channel, exchange, type, autodelete) do
 		:'exchange.declare_ok'[] = :amqp_channel.call channel, :'exchange.declare'[exchange: exchange, type: type, auto_delete: autodelete]
 		exchange
 	end
+
+	def declare_exchange(channel, exchange, type, autodelete, durable) do
+		:'exchange.declare_ok'[] = :amqp_channel.call channel, :'exchange.declare'[exchange: exchange, type: type, auto_delete: autodelete, durable: durable]
+		exchange
+	end
 	
-	def set_qos(channel, prefetch_count // 1) do
+	def set_qos(channel, prefetch_count \\ 1) do
 		:'basic.qos_ok'[] = :amqp_channel.call channel, :'basic.qos'[prefetch_count: prefetch_count]
 		prefetch_count
 	end
