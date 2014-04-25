@@ -45,6 +45,8 @@ defmodule Exrabbit.Defs do
 	defrecord :'confirm.select_ok', Record.extract(:'confirm.select_ok', from_lib: "rabbit_common/include/rabbit_framing.hrl")
 	defrecord :amqp_msg, [props: :'P_basic'[], payload: ""]
 
+end
+
 defmodule Exrabbit.Utils do
 	defp get_host do
 		'localhost'
@@ -109,6 +111,7 @@ defmodule Exrabbit.Utils do
 	def publish(channel, exchange, routing_key, message) do
 		publish(channel, exchange, routing_key, message, :no_confirmation)
 	end
+
 	def publish(channel, exchange, routing_key, message, :no_confirmation) do
 		:amqp_channel.call channel, :'basic.publish'[exchange: exchange, routing_key: routing_key], :amqp_msg[payload: message]
 	end
@@ -133,14 +136,16 @@ defmodule Exrabbit.Utils do
 	def nack(channel, tag) do
 		:amqp_channel.call channel, :'basic.nack'[delivery_tag: tag]
 	end
-	def get_messages(channel, queue), do: get_messages(channel, queue, true)
+
 	def get_messages_ack(channel, queue), do: get_messages(channel, queue, false)
+	def get_messages(channel, queue), do: get_messages(channel, queue, true)
 	def get_messages(channel, queue, true) do
 		case :amqp_channel.call channel, :'basic.get'[queue: queue, no_ack: true] do
 			{:'basic.get_ok'[], content} -> get_payload(content)
 			:'basic.get_empty'[] -> nil
 		end
 	end
+
 	def get_messages(channel, queue, false) do
 		case :amqp_channel.call channel, :'basic.get'[queue: queue, no_ack: false] do
 			{:'basic.get_ok'[delivery_tag: tag], content} -> [tag: tag, content: get_payload(content)]
@@ -222,11 +227,13 @@ defmodule Exrabbit.Utils do
 	end
 
 	def subscribe(channel, queue), do: subscribe(channel, queue, self)
+
 	def subscribe(channel, queue, pid) do
 		sub = :'basic.consume'[queue: queue]
 		:'basic.consume_ok'[consumer_tag: consumer_tag] = :amqp_channel.subscribe channel, sub, pid
 		consumer_tag
 	end
+
 	def unsubscribe(channel, consumer_tag) do
 		:amqp_channel.call channel, :'basic.cancel'[consumer_tag: consumer_tag]
 	end
