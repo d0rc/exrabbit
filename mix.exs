@@ -16,7 +16,6 @@ defmodule Exrabbit.Mixfile do
 
   defp deps do
     [
-      { :amqp_client,  git: "https://github.com/jbrisbin/amqp_client" },
       { :amqp_client, github: "jbrisbin/amqp_client" },
       { :jazz, github: "meh/jazz"}
     ]
