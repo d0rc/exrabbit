@@ -178,10 +178,6 @@ defmodule Exrabbit.Utils do
 		queue
 	end
 	
-	def bind_queue(channel, queue, exchange, key \\ "") do
-		:'queue.bind_ok'[] = :amqp_channel.call channel, :'queue.bind'[queue: queue, exchange: exchange, routing_key: key]		
-	end
-	
 
 	def declare_exchange(channel, exchange) do
 		:'exchange.declare_ok'[] = :amqp_channel.call channel, :'exchange.declare'[exchange: exchange, type: "fanout", auto_delete: true]
