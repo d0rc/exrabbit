@@ -10,7 +10,7 @@ Easy way to get a queue/exchange worker:
 import Exrabbit.DSL
 
 amqp_worker TestQ, queue: "testQ" do
-  on_json json = %{} do
+  on json = %{} do
     IO.puts "JSON: #{inspect json}"
   end
   on <<"hello">> do
