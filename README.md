@@ -7,16 +7,16 @@ Easy way to get a queue/exchange worker:
 
 
 ```elixir
-import Exrabbit.Ractor
+import Exrabbit.DSL
 
 amqp_worker TestQ, queue: "testQ" do
-  on_json json do
+  on_json json = %{} do
     IO.puts "JSON: #{inspect json}"
   end
-  on_binary <<"hello">> do
+  on <<"hello">> do
     IO.puts "Hello-hello from MQ"
   end
-  on_binary text do
+  on text do
     IO.puts "Some random binary: #{inspect text}"
   end
 end

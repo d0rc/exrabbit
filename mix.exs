@@ -3,7 +3,7 @@ defmodule Exrabbit.Mixfile do
 
   def project do
     [ app: :exrabbit,
-      version: "0.0.2",
+      version: "0.0.3",
       deps: deps ]
   end
 

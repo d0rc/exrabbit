@@ -1,9 +1,9 @@
-defmodule Exrabbit.Ractor do
+defmodule Exrabbit.DSL do
 	defmacro amqp_worker(name, opts, code) do
 		quote do
 			defmodule unquote(name) do
 				import Exrabbit.Utils
-				import Exrabbit.Ractor
+				import Exrabbit.DSL
 				def start_link() do
 					:gen_server.start_link __MODULE__, [], []
 				end
@@ -42,10 +42,10 @@ defmodule Exrabbit.Ractor do
 						false -> :ok
 					end
 				end
-				defp maybe_call_listener(tag, json, state, reply_to \\ nil) do
-					case Jazz.decode(json) do
-						{:ok, data} -> f_json_listener(data)
-						_           -> f_binary_listener(json)
+				defp maybe_call_listener(tag, msg, state, reply_to \\ nil) do
+					case Jazz.decode(msg) do
+						{:ok, data} -> handle_data(data)
+						_           -> handle_data(msg)
 					end
 				end
 				def handle_info(message = {:'DOWN', monitor_ref, type, object, info}, state = %{
@@ -66,10 +66,10 @@ defmodule Exrabbit.Ractor do
 					res = case parse_message(msg) do
 						nil -> 
 							maybe_call_connection_established(state)
-						{tag, json} -> 
-							{:ok, tag, maybe_call_listener(tag, json, state)}
-						{tag, json, reply_to} ->
-							{:ok, tag, maybe_call_listener(tag, json, state, reply_to)}
+						{tag, data} -> 
+							{:ok, tag, maybe_call_listener(tag, data, state)}
+						{tag, data, reply_to} ->
+							{:ok, tag, maybe_call_listener(tag, data, state, reply_to)}
 					end
 					case res do
 						{:ok, tag, :ok} -> 
@@ -85,16 +85,22 @@ defmodule Exrabbit.Ractor do
 		end
 	end
 	@doc """
-		in case on_json / on_binary returns :ok - message is acked, it's nacked otherwise
+		in case `on` returns :ok - message is acked, it's nacked otherwise
 	"""
-	defmacro on_json(json, code) do
-		quote do
-			def f_json_listener(unquote(json)),	unquote(code)
-		end
-	end
-	defmacro on_binary(binary, code)  do
-		quote do
-			def f_binary_listener(unquote(binary)), unquote(code)
+	defmacro on(match, code) do
+		IO.puts "Got  match: [#{inspect match}]"
+		IO.puts "Got   code: [#{inspect code}]"
+		case match do
+			{:when, _, [arg, when_code]} -> 
+				IO.puts "Going to create with 'when': #{inspect arg}, when: #{inspect when_code}"
+				quote do
+					def handle_data(unquote(arg)) when unquote(when_code), unquote(code)
+				end
+			_ ->
+				IO.puts "Going to create without when"
+				quote do
+					def handle_data(unquote(match)), unquote(code)
+				end
 		end
 	end
 end
