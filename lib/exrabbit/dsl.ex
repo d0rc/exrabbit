@@ -88,16 +88,12 @@ defmodule Exrabbit.DSL do
 		in case `on` returns :ok - message is acked, it's nacked otherwise
 	"""
 	defmacro on(match, code) do
-		IO.puts "Got  match: [#{inspect match}]"
-		IO.puts "Got   code: [#{inspect code}]"
 		case match do
 			{:when, _, [arg, when_code]} -> 
-				IO.puts "Going to create with 'when': #{inspect arg}, when: #{inspect when_code}"
 				quote do
 					def handle_data(unquote(arg)) when unquote(when_code), unquote(code)
 				end
 			_ ->
-				IO.puts "Going to create without when"
 				quote do
 					def handle_data(unquote(match)), unquote(code)
 				end
