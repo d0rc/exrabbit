@@ -8,7 +8,6 @@ defmodule Exrabbit.DSL do
 					:gen_server.start_link __MODULE__, [], []
 				end
 				def init(_) do
-					IO.puts "Connecting: #{inspect unquote(opts) || :application.get_all_env(unquote(opts[:config_name]))}"
 					config = case unquote(opts)[:config_name] do
 						nil -> unquote(opts)
 						config_name  -> :application.get_all_env(config_name)
