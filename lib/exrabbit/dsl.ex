@@ -41,7 +41,7 @@ defmodule Exrabbit.DSL do
 					end
 				end
 				defp maybe_call_listener(tag, msg, state, reply_to \\ nil) do
-					case Jazz.decode(msg) do
+					case Jazz.decode(msg, unquote(opts[:decode_json]) || []) do
 						{:ok, data} -> handle_data(data)
 						_           -> handle_data(msg)
 					end
