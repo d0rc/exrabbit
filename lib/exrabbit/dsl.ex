@@ -8,23 +8,22 @@ defmodule Exrabbit.DSL do
 					:gen_server.start_link __MODULE__, [], []
 				end
 				def init(_) do
-					amqp = connect(unquote(opts))
+					IO.puts "Connecting: #{inspect unquote(opts) || :application.get_all_env(unquote(opts[:config_name]))}"
+					config = case unquote(opts)[:config_name] do
+						nil -> unquote(opts)
+						config_name  -> :application.get_all_env(config_name)
+					end
+					amqp = connect(config)
 					channel = channel(amqp)
-					unquote(
-						cond do
-							opts[:queue] != nil ->
-								quote do
-									subscribe(channel, unquote(opts[:queue]))
-								end
-							opts[:exchange] != nil ->
-								quote do
-									queue = declare_queue(channel)
-									bind_queue(channel, queue, unquote(opts[:exchange]))
-									subscribe(channel, queue)
-								end
-							true -> raise "Either exchange or queue should be given"
-						end
-					)
+					cond do
+						queue = config[:queue] -> subscribe(channel, queue)
+						exchange = config[:exchange] ->
+							queue = declare_queue(channel)
+							bind_queue(channel, queue, exchange)
+							subscribe(channel, queue)
+						true ->
+							raise MissConfiguration
+					end
 			        amqp_monitor = :erlang.monitor :process, amqp
 			        channel_monitor = :erlang.monitor :process, channel
 					{:ok, 
