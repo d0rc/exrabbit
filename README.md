@@ -22,6 +22,29 @@ amqp_worker TestQ, queue: "testQ" do
 end
 ```
 
+N.B. Instead of passing configuration options when defining module with `amqp_worker` one can add following to config.exs:
+
+```
+[
+  exrabbit: [
+    my_queue: [queue: "TestQ"]
+  ]
+]
+```
+
+and then define module as:
+
+
+```
+amqp_worker TestQ, config_name: :wheel_ingress_queue, decode_json: [keys: :atoms] do
+  on %{cmd: "resize_image", image: image} do
+    IO.puts "Resizing image: #{inspect image}"
+  end
+end
+```
+
+
+
 
 Checking if message was published:
 
