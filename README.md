@@ -36,7 +36,7 @@ and then define module as:
 
 
 ```elixir
-amqp_worker TestQ, config_name: :wheel_ingress_queue, decode_json: [keys: :atoms] do
+amqp_worker TestQ, config_name: :my_queue, decode_json: [keys: :atoms] do
   on %{cmd: "resize_image", image: image} do
     IO.puts "Resizing image: #{inspect image}"
   end
