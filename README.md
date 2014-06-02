@@ -44,8 +44,6 @@ end
 ```
 
 
-
-
 Checking if message was published:
 
 

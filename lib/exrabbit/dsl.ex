@@ -13,7 +13,9 @@ defmodule Exrabbit.DSL do
 						config_name  -> (:application.get_all_env(:exrabbit))[config_name]
 					end
 					amqp = connect(config)
+					link(amqp)
 					channel = channel(amqp)
+					link(channel)
 					cond do
 						queue = config[:queue] -> subscribe(channel, queue)
 						exchange = config[:exchange] ->
