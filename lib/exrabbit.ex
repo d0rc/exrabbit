@@ -180,7 +180,6 @@ defmodule Exrabbit.Utils do
 		queue_declare_ok(queue: queue) = :amqp_channel.call channel, queue_declare(queue: queue, auto_delete: autodelete, durable: durable)
 		queue
 	end
-	
 
 	def declare_exchange(channel, exchange) do
 		exchange_declare_ok() = :amqp_channel.call channel, exchange.declare(exchange: exchange, type: "fanout", auto_delete: true)

@@ -12,6 +12,10 @@ defmodule Exrabbit.DSL do
 						nil -> unquote(opts)
 						config_name  -> (:application.get_all_env(:exrabbit))[config_name]
 					end
+					routingKey = case config[:routingKey] do
+						nil -> ""
+						key -> key
+					end
 					amqp = connect(config)
 					:erlang.link(amqp)
 					channel = channel(amqp)
@@ -20,7 +24,7 @@ defmodule Exrabbit.DSL do
 						queue = config[:queue] -> subscribe(channel, queue)
 						exchange = config[:exchange] ->
 							queue = declare_queue(channel)
-							bind_queue(channel, queue, exchange)
+							bind_queue(channel, queue, exchange, routingKey)
 							subscribe(channel, queue)
 						true ->
 							raise MissConfiguration
