@@ -226,7 +226,7 @@ defmodule Exrabbit.Utils do
 
 	def subscribe(channel, opts = %{queue: queue, noack: noack}) do
 		sub = basic_consume(queue: queue, no_ack: noack)
-		basic_consume_ok(consumer_tag: consumer_tag) = :amqp_channel.subscribe channel, sub, pid
+		basic_consume_ok(consumer_tag: consumer_tag) = :amqp_channel.subscribe channel, sub, self
 		consumer_tag
 	end
 	def subscribe(channel, queue), do: subscribe(channel, queue, self)
