@@ -7,6 +7,12 @@ defmodule Exrabbit.DSL do
 				def start_link() do
 					:gen_server.start_link __MODULE__, [], []
 				end
+				defp get_noack(config) do
+					case config[:noack] do
+						nil -> false
+						val -> val
+					end
+				end
 				def init(_) do
 					config = case unquote(opts)[:config_name] do
 						nil -> unquote(opts)
@@ -21,11 +27,11 @@ defmodule Exrabbit.DSL do
 					channel = channel(amqp)
 					:erlang.link(channel)
 					cond do
-						queue = config[:queue] -> subscribe(channel, queue)
+						queue = config[:queue] -> subscribe(channel, %{queue: queue, noack: get_noack(config)})
 						exchange = config[:exchange] ->
 							queue = declare_queue(channel)
 							bind_queue(channel, queue, exchange, routingKey)
-							subscribe(channel, queue)
+							subscribe(channel, %{queue: queue, noack: get_noack(config)})
 						true ->
 							raise MissConfiguration
 					end
@@ -36,6 +42,7 @@ defmodule Exrabbit.DSL do
 							connection: amqp, 
 							channel: channel, 
 							amqp_monitor: amqp_monitor, 
+							config: config,
 							channel_monitor: channel
 						}
 					}
@@ -75,12 +82,16 @@ defmodule Exrabbit.DSL do
 						{tag, data, reply_to} ->
 							{:ok, tag, maybe_call_listener(tag, data, state, reply_to)}
 					end
-					case res do
-						{:ok, tag, :ok} -> 
-							ack state[:channel], tag
-						{:ok, tag, _}   -> 
-							nack state[:channel], tag
-						_ -> :ok
+					case state[:config][:noack] do
+						true -> :ok
+						_    ->
+							case res do
+								{:ok, tag, :ok} -> 
+									ack state[:channel], tag
+								{:ok, tag, _}   -> 
+									nack state[:channel], tag
+								_ -> :ok
+							end
 					end
 					{:noreply, state}
 				end

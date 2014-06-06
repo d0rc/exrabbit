@@ -224,6 +224,11 @@ defmodule Exrabbit.Utils do
 		{:error, :unknown_message}
 	end
 
+	def subscribe(channel, opts = %{queue: queue, noack: noack}) do
+		sub = basic_consume(queue: queue, noack: noack)
+		basic_consume_ok(consumer_tag: consumer_tag) = :amqp_channel.subscribe channel, sub, pid
+		consumer_tag
+	end
 	def subscribe(channel, queue), do: subscribe(channel, queue, self)
 
 	def subscribe(channel, queue, pid) do
