@@ -1,7 +1,7 @@
 require Record
 
 defmodule Exrabbit do
-  use Application.Behaviour
+  use Application
 
   def start(_type, _args) do
     Exrabbit.Supervisor.start_link
