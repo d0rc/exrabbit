@@ -17,7 +17,7 @@ defmodule Exrabbit.Mixfile do
   defp deps do
     [
       { :amqp_client, github: "d0rc/amqp_client" },
-      { :jazz, github: "meh/jazz"}
+      { :jazz, github: "d0rc/jazz", branch: "v0.14.1"}
     ]
   end
 end
