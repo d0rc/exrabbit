@@ -16,7 +16,7 @@ defmodule Exrabbit.DSL do
 				def init(_) do
 					config = case unquote(opts)[:config_name] do
 						nil -> unquote(opts)
-						config_name  -> (:application.get_all_env(:exrabbit))[config_name]
+						config_name  -> (Sweetconfig.get :exrabbit)[config_name]
 					end
 					routingKey = case config[:routingKey] do
 						nil -> ""
