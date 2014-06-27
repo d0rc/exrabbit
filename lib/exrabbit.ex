@@ -185,6 +185,12 @@ defmodule Exrabbit.Utils do
 		exchange_declare_ok() = :amqp_channel.call channel, exchange.declare(exchange: exchange, type: "fanout", auto_delete: true)
 		exchange
 	end
+
+  def declare_exchange(channel, exchange, opts) when is_map(opts) do
+    opts = Enum.concat [exchange: exchange], opts
+    exchange_declare_ok() = :amqp_channel.call channel, exchange.declare.new(opts)
+    exchange
+  end
 	
 	def declare_exchange(channel, exchange, type, autodelete) do
 		exchange_declare_ok() = :amqp_channel.call channel, exchange_declare(exchange: exchange, type: type, auto_delete: autodelete)
