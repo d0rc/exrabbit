@@ -17,7 +17,7 @@ defmodule Exrabbit.Subscriber do
         end
         amqp_monitor = :erlang.monitor :process, amqp
         channel_monitor = :erlang.monitor :process, channel
-        { :ok, [connection: amqp, channel: channel, amqp_monitor: amqp_monitor, channel_monitor: channel] }
+        { :ok, [connection: amqp, channel: channel, amqp_monitor: amqp_monitor, channel_monitor: channel, user_state: args[:user_state]] }
       end
 
       def handle_call(_request, _from, state) do
