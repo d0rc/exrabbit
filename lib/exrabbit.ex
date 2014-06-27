@@ -133,6 +133,29 @@ defmodule Exrabbit.Utils do
 		end
 	end
 
+	def publish(channel, exchange, routing_key, message, headers) do
+		publish(channel, exchange, routing_key, message, headers, :no_confirmation)
+	end
+
+	def publish(channel, exchange, routing_key, message, headers, :no_confirmation) do
+		:amqp_channel.call channel, basic_publish(exchange: exchange, routing_key: routing_key), amqp_msg(payload: message, props: pbasic(headers: headers))
+	end
+
+	def publish(channel, exchange, routing_key, message, properties, :wait_confirmation) do
+		root = self
+		confirm_select_ok() = :amqp_channel.call channel, confirm_select()
+		:ok = :amqp_channel.register_confirm_handler channel, spawn fn -> 
+			wait_confirmation(root, channel) 
+		end
+		:ok = publish(channel, exchange, routing_key, message, properties, :no_confirmation)
+		receive do
+			{:message_confirmed, _data} -> :ok
+			{:message_lost, _data} -> {:error, :lost}
+			{:confirmation_timeout} -> {:error, :timeout}
+		end
+	end
+
+
 	def ack(channel, tag) do
 		:amqp_channel.call channel, basic_ack(delivery_tag: tag)
 	end
@@ -170,6 +193,12 @@ defmodule Exrabbit.Utils do
 		queue_declare_ok(queue: queue) = :amqp_channel.call channel, queue_declare(queue: queue)
 		queue
 	end
+
+	def declare_queue(channel, queue, opts) when is_map(opts) do
+		opts = Map.merge(%{queue: queue}, opts)
+		queue_declare_ok(queue: queue) = :amqp_channel.call channel, queue_declare.new(opts)
+		queue
+	end
 	
 	def declare_queue(channel, queue, autodelete) do
 		queue_declare_ok(queue: queue) = :amqp_channel.call channel, queue_declare(queue: queue, auto_delete: autodelete)
@@ -205,8 +234,10 @@ defmodule Exrabbit.Utils do
 		queue_bind_ok() = :amqp_channel.call channel, queue_bind(queue: queue, exchange: exchange, routing_key: key)	
 	end
   
-  	def parse_message({basic_deliver(delivery_tag: tag), amqp_msg(props: pbasic(reply_to: nil), payload: payload)}), do: {tag, payload}
-	def parse_message({basic_deliver(delivery_tag: tag), amqp_msg(props: pbasic(reply_to: reply_to), payload: payload)}), do: {tag, payload, reply_to}
+  	def parse_message({basic_deliver(delivery_tag: tag), amqp_msg(props: pbasic(reply_to: nil, headers: nil), payload: payload)}), do: {tag, payload}
+	def parse_message({basic_deliver(delivery_tag: tag), amqp_msg(props: pbasic(reply_to: reply_to, headers: nil), payload: payload)}), do: {tag, payload, reply_to}
+	def parse_message({basic_deliver(delivery_tag: tag), amqp_msg(props: pbasic(reply_to: nil, headers: headers), payload: payload)}), do: {tag, payload, headers}
+	def parse_message({basic_deliver(delivery_tag: tag), amqp_msg(props: pbasic(reply_to: reply_to, headers: headers), payload: payload)}), do: {tag, payload, reply_to, headers}
 	def parse_message({basic_deliver(delivery_tag: tag), amqp_msg(payload: payload)}), do: {:message,tag, payload}
 	def parse_message(basic_cancel_ok()), do: nil
 	def parse_message(basic_consume_ok()), do: nil
