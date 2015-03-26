@@ -10,7 +10,7 @@ defmodule Exrabbit.Mixfile do
   def application do
     [
       mod: { Exrabbit, [] },
-      applications: [:amqp_client, :jazz, :sweetconfig, :rabbit_common]
+      applications: [:amqp_client, :xmerl, :jazz, :sweetconfig, :rabbit_common]
     ]
   end
 
