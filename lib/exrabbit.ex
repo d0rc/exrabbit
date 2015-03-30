@@ -69,14 +69,14 @@ defmodule Exrabbit.Utils do
 			end
 		end)
 		
-		{:ok, connection} = :amqp_connection.start(amqp_params_network(
+		params = amqp_params_network(
 			username: connection_settings[:username],
 			password: connection_settings[:password],
 			host: connection_settings[:host],
 			virtual_host: connection_settings[:virtual_host],
 			heartbeat: connection_settings[:heartbeat]
-		))
-		connection
+		)
+		:amqp_connection.start(params)
 	end
 
 	defp get_payload(amqp_msg(payload: payload)), do: payload
